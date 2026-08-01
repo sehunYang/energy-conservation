@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에너지 보존 법칙 탐구 홈페이지</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons for Notion-like UI icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- SheetJS for Excel generation and parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom styling to mimic Notion's typography and clean look -->
+    <style>
+        /* Notion-like typography and reset */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            color: #37352f;
+            background-color: #ffffff;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll, handle scroll in main content */
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: 250px;
+            background-color: #fbfbfa;
+            border-right: 1px solid rgba(55, 53, 47, 0.09);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 50;
+        }
+
+        /* Sidebar items hover effect */
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 14px;
+            margin: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.1s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(55, 53, 47, 0.08);
+        }
+
+        .sidebar-item.active {
+            background-color: rgba(55, 53, 47, 0.08);
+            font-weight: 600;
+        }
+
+        /* Main Content Area */
+        #main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 48px 10vh 48px;
+            scroll-behavior: smooth;
+        }
+
+        .content-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding-top: 8vh;
+        }
+
+        /* Page Headers */
+        h1.page-title {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        h2.section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+        }
+
+        /* Notion-like Callout blocks */
+        .callout {
+            padding: 16px;
+            border-radius: 4px;
+            background-color: #f1f1ef;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        /* Button styles */
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: white;
+            border: 1px solid rgba(55, 53, 47, 0.16);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .btn-download:hover {
+            background-color: #f1f1ef;
+        }
+
+        /* Tab System */
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(55, 53, 47, 0.6);
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-btn:hover {
+            color: #37352f;
+        }
+        .tab-btn.active {
+            color: #37352f;
+            border-bottom-color: #37352f;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            #main-content {
+                padding: 0 24px;
+            }
+            .mobile-menu-btn {
+                display: block !important;
+            }
+        }
+        
+        /* Utility for hiding pages */
+        .page-section {
+            display: none;
+        }
+        .page-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Menu Toggle Button (visible only on small screens) -->
+    <div class="fixed top-4 left-4 z-50 hidden mobile-menu-btn p-2 rounded-md bg-white border border-gray-200 shadow-sm hover:bg-gray-100 cursor-pointer" id="menu-toggle">
+        <i class="ph ph-list text-2xl text-gray-700"></i>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <div class="px-4 py-2 mb-4">
+            <div class="flex items-center gap-2 font-semibold text-sm cursor-pointer hover:bg-gray-200 p-1 -ml-1 rounded transition-colors">
+                <div class="w-5 h-5 bg-blue-500 rounded text-white flex items-center justify-center text-xs">Ph</div>
+                고등학교 2학년 물리학
+            </div>
+        </div>
+        
+        <div class="text-xs font-semibold text-gray-400 px-4 mb-2">PAGES</div>
+        
+        <div class="sidebar-item active" onclick="navigate('home')">
+            <i class="ph ph-house mr-2 text-lg text-gray-500"></i>
+            메인 페이지
+        </div>
+        <div class="sidebar-item" onclick="navigate('guide')">
+            <i class="ph ph-compass mr-2 text-lg text-gray-500"></i>
+            탐구 안내
+        </div>
+        <div class="sidebar-item" onclick="navigate('assignment')">
+            <i class="ph ph-tray mr-2 text-lg text-gray-500"></i>
+            과제 제출 및 게시판
+        </div>
+        <div class="sidebar-item mt-6 border-t border-gray-200 pt-2" onclick="navigate('dashboard')">
+            <i class="ph ph-lock-key mr-2 text-lg text-gray-500"></i>
+            교사 대시보드
+        </div>
+        
+        <!-- NEW: DB Status Indicator -->
+        <div class="mt-auto mb-4 px-4">
+            <div id="db-status" class="flex items-center gap-2 text-xs font-medium text-gray-500 bg-gray-100 p-2 rounded-md">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-500"></span>
+                </span>
+                DB 연결 대기중...
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main id="main-content">
+        
+        <!-- ==================== HOME PAGE ==================== -->
+        <section id="page-home" class="page-section active content-container">
+            <!-- Cover Image (Notion style) -->
+            <div class="w-full h-48 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg mb-8 mt-4 overflow-hidden relative">
+                <!-- Abstract representation of energy -->
+                <div class="absolute inset-0 opacity-20">
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0,100 C150,200 350,0 500,100 C650,200 850,0 1000,100 L1000,200 L0,200 Z" fill="#3b82f6"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <h1 class="page-title">
+                <span class="text-5xl">⚡</span> 에너지 보존 법칙 탐구 프로젝트
+            </h1>
+            
+            <div class="callout mt-8">
+                <div>💡</div>
+                <div class="text-gray-700">
+                    <strong>환영합니다!</strong> 본 프로젝트는 고등학교 2학년 물리학 수업의 일환으로, 데이터를 직접 수집하고 분석하여 '역학적 에너지 보존 법칙'을 깊이 있게 이해하는 것을 목표로 합니다.
+                </div>
+            </div>
+
+            <h2 class="section-title">📌 공지사항</h2>
+            <ul class="space-y-3 mt-4 text-gray-700">
+                <li class="flex items-start gap-2">
+                    <i class="ph-fill ph-check-circle text-blue-500 mt-1"></i>
+                    <div>
+                        <strong>[필독] 탐구 활동 안내서 배포</strong>
+                        <p class="text-sm text-gray-500">탐구 활동에 필요한 세부 지침이 포함된 문서를 확인하세요. (2026.07.25)</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="ph-fill ph-check-circle text-blue-500 mt-1"></i>
+                    <div>
+                        <strong>조별 역할 분담 제출 안내</strong>
+                        <p class="text-sm text-gray-500">다음 주 금요일까지 각 조의 역할 분담표를 '과제 제출' 메뉴에 업로드 바랍니다.</p>
+                    </div>
+                </li>
+            </ul>
+
+            <h2 class="section-title">🎯 프로젝트 개요</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="border border-gray-200 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onclick="navigate('guide')">
+                    <h3 class="font-bold flex items-center gap-2"><i class="ph-fill ph-book-open text-gray-500"></i> 탐구 안내 보기</h3>
+                    <p class="text-sm text-gray-600 mt-2">평가 기준 및 상세 일정을 확인하세요.</p>
+                </div>
+                <div class="border border-gray-200 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onclick="navigate('assignment')">
+                    <h3 class="font-bold flex items-center gap-2"><i class="ph-fill ph-chat-circle text-gray-500"></i> 질의응답</h3>
+                    <p class="text-sm text-gray-600 mt-2">궁금한 점은 언제든지 게시판에 남겨주세요.</p>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-sm text-gray-400 border-t pt-4">
+                Last edited: Today
+            </div>
+        </section>
+
+        <!-- ==================== GUIDE PAGE ==================== -->
+        <section id="page-guide" class="page-section content-container">
+            <h1 class="page-title">
+                <span class="text-5xl">🧭</span> 탐구 안내
+            </h1>
+            
+            <p class="text-gray-700 text-lg mb-8 leading-relaxed">
+                이 페이지에서는 데이터 분석을 통한 에너지 보존 법칙 탐구의 단계별 가이드를 제공합니다. 각 단계를 차례대로 확인하며 프로젝트를 진행해 주세요.
+            </p>
+            
+            <!-- Download Button -->
+            <div class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <i class="ph ph-file-pdf text-3xl text-red-500"></i>
+                    <div>
+                        <div class="font-medium text-gray-800">탐구활동_워크북.pdf</div>
+                        <div class="text-xs text-gray-500">2.4 MB</div>
+                    </div>
+                </div>
+                <a href="#" class="btn-download" onclick="triggerDownload(event)">
+                    <i class="ph ph-download-simple"></i> 다운로드
+                </a>
+            </div>
+
+            <h2 class="section-title">📊 단계별 탐구 과정</h2>
+            
+            <!-- Tab System -->
+            <div class="mt-4 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                <div class="tab-header bg-gray-50 border-b-0 px-2 pt-2 mb-0">
+                    <div class="tab-btn active" onclick="switchTab('tab1', this)">1단계: 실험 설계</div>
+                    <div class="tab-btn" onclick="switchTab('tab2', this)">2단계: 데이터 수집</div>
+                    <div class="tab-btn" onclick="switchTab('tab3', this)">3단계: 분석 및 결론</div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Tab 1 Content -->
+                    <div id="tab1" class="tab-content active">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                            <i class="ph-fill ph-number-circle-one text-blue-500"></i> 가설 설정 및 실험 장치 구성
+                        </h3>
+                        <p class="mb-4 text-gray-700">자유 낙하 또는 진자 운동과 같은 역학적 시스템을 선택하고, 위치 에너지와 운동 에너지의 변환에 대한 가설을 세웁니다.</p>
+                        
+                        <div class="bg-blue-50 p-4 rounded-md border-l-4 border-blue-400 mb-4 text-sm text-gray-800">
+                            <strong>체크리스트:</strong>
+                            <ul class="list-disc ml-5 mt-2 space-y-1">
+                                <li>측정할 변수(높이, 속도, 질량)가 명확한가?</li>
+                                <li>마찰이나 공기 저항을 최소화할 방안이 있는가?</li>
+                                <li>조원 간의 역할이 분담되었는가?</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2 Content -->
+                    <div id="tab2" class="tab-content">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                            <i class="ph-fill ph-number-circle-two text-green-500"></i> 센서 및 트래킹 앱 활용
+                        </h3>
+                        <p class="mb-4 text-gray-700">스마트폰의 가속도 센서 앱(phyphox 등)이나 영상 분석 프로그램(Tracker 등)을 사용하여 물체의 운동 데이터를 수집합니다.</p>
+                        
+                        <!-- NEW: Example Excel Download -->
+                        <div class="mb-4 flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                            <i class="ph-fill ph-file-xls text-3xl text-green-600"></i>
+                            <div class="flex-grow">
+                                <div class="font-medium text-gray-800">예시 실험 데이터</div>
+                                <div class="text-xs text-gray-500">자유낙하 운동을 가정한 높이 및 속도 데이터 (example_data.xlsx)</div>
+                            </div>
+                            <button onclick="downloadExampleExcel()" class="btn-download bg-white border-green-200 text-green-700 hover:bg-green-100">
+                                <i class="ph ph-download-simple"></i> 다운로드
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="border rounded p-3 text-center bg-gray-50">
+                                <i class="ph ph-device-mobile-camera text-2xl mb-2 text-gray-600"></i>
+                                <div class="font-medium text-sm">센서 앱 활용법</div>
+                            </div>
+                            <div class="border rounded p-3 text-center bg-gray-50">
+                                <i class="ph ph-video-camera text-2xl mb-2 text-gray-600"></i>
+                                <div class="font-medium text-sm">영상 분석 가이드</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3 Content -->
+                    <div id="tab3" class="tab-content">
+                        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                            <i class="ph-fill ph-number-circle-three text-purple-500"></i> 실험 데이터 분석 및 그래프
+                        </h3>
+                        <p class="mb-4 text-gray-700">수집한 엑셀(.xlsx) 데이터를 업로드하면, 에너지를 자동으로 계산하고 역학적 에너지가 보존되는지 확인할 수 있는 그래프를 그려줍니다. (이곳에서 분석된 결과는 과제 제출 시 자동으로 연동됩니다.)</p>
+                        
+                        <!-- NEW: Excel Upload & Chart Area -->
+                        <div class="mb-6 p-6 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 text-center relative hover:bg-blue-100 transition-colors">
+                            <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleExcelUpload(event)">
+                            <i class="ph ph-upload-simple text-4xl text-blue-500 mb-2"></i>
+                            <div class="font-medium text-blue-800">여기를 클릭하거나 데이터 파일(.xlsx)을 드래그하여 업로드하세요</div>
+                            <div class="text-xs text-blue-600 mt-1">필수 열: 시간(s), 높이(m), 속도(m/s)</div>
+                        </div>
+                        
+                        <div id="analysis-results" class="hidden space-y-6">
+                            <!-- NEW: AI 자동 분석 요약 (세특 기초 자료) -->
+                            <div class="bg-blue-50 p-4 border border-blue-200 rounded-lg shadow-sm">
+                                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2"><i class="ph-fill ph-file-text text-blue-500"></i> 실험 분석 요약 (세특 기초 자료)</h4>
+                                <p id="auto-analysis-text" class="text-sm text-blue-900 whitespace-pre-line leading-relaxed font-medium"></p>
+                            </div>
+
+                            <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+                                <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center gap-2"><i class="ph-fill ph-chart-line-up text-blue-500"></i> 에너지 보존 그래프</h4>
+                                <div style="position: relative; height:300px; width:100%">
+                                    <canvas id="energyChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
+                                <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center gap-2"><i class="ph-fill ph-table text-green-500"></i> 분석 데이터 (미리보기)</h4>
+                                <table class="min-w-full text-sm text-center border-collapse" id="analysis-table">
+                                    <thead class="bg-gray-50 text-gray-600">
+                                        <tr>
+                                            <th class="border p-2">시간(s)</th>
+                                            <th class="border p-2">높이(m)</th>
+                                            <th class="border p-2">속도(m/s)</th>
+                                            <th class="border p-2 text-blue-600">위치에너지(J)</th>
+                                            <th class="border p-2 text-red-600">운동에너지(J)</th>
+                                            <th class="border p-2 text-purple-600 font-bold">역학적에너지(J)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="analysis-table-body" class="text-gray-700 divide-y">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">📋 평가 기준 (루브릭)</h2>
+            <div class="overflow-x-auto mt-4">
+                <table class="min-w-full text-left text-sm text-gray-700 border-collapse">
+                    <thead class="bg-gray-100 border-b border-gray-300">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold">평가 항목</th>
+                            <th class="px-4 py-3 font-semibold">우수 (A)</th>
+                            <th class="px-4 py-3 font-semibold">보통 (B)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 font-medium bg-gray-50">데이터 수집</td>
+                            <td class="px-4 py-3">정확한 도구 활용, 오차 최소화 노력 뚜렷함</td>
+                            <td class="px-4 py-3">도구 활용은 적절하나 일부 오차 발생</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-medium bg-gray-50">데이터 분석</td>
+                            <td class="px-4 py-3">에너지 계산이 정확하고 그래프 해석이 논리적임</td>
+                            <td class="px-4 py-3">계산은 대체로 맞으나 해석이 다소 부족함</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ==================== ASSIGNMENT PAGE ==================== -->
+        <section id="page-assignment" class="page-section content-container">
+            <h1 class="page-title">
+                <span class="text-5xl">📥</span> 과제 제출 및 게시판
+            </h1>
+            
+            <p class="text-gray-700 mb-8">
+                조별 탐구 결과물 업로드 및 궁금한 점을 질문하는 공간입니다.
+            </p>
+
+            <h2 class="section-title">탐구 보고서 제출</h2>
+            
+            <form class="mt-6 border border-gray-200 rounded-lg p-6 bg-white shadow-sm" onsubmit="submitForm(event)">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">조 이름</label>
+                        <input type="text" id="group-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="예: 1조" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">학번</label>
+                        <input type="text" id="student-id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="예: 20101" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                        <input type="text" id="student-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="홍길동" required>
+                    </div>
+                </div>
+                
+                <!-- NEW: Data Link Status -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">분석 데이터 연동 상태</label>
+                    <div id="attached-data-status" class="p-3 bg-gray-50 border border-gray-200 rounded-md flex items-center gap-2 text-sm text-gray-500 transition-all">
+                        <i class="ph ph-link-break text-lg"></i>
+                        <span>아직 탐구 안내(3단계)에서 분석된 데이터가 없습니다.</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">1. 실험 요약</label>
+                    <textarea id="exp-summary" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" rows="2" placeholder="어떤 실험을 진행했는지 간략히 적어주세요." required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">2. 가설 검증</label>
+                    <textarea id="hypo-verification" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" rows="3" placeholder="처음에 세웠던 가설이 데이터 분석 결과와 일치하는지 적어주세요." required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">3. 오차 및 원인 분석</label>
+                    <textarea id="error-analysis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" rows="3" placeholder="역학적 에너지가 완벽히 보존되지 않았다면 그 이유(마찰, 저항, 측정 한계 등)를 구체적으로 분석해주세요." required></textarea>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">4. 소감</label>
+                    <textarea id="reflection" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" rows="2" placeholder="이번 탐구를 통해 새롭게 알게 된 점이나 느낀 점을 적어주세요." required></textarea>
+                </div>
+                
+                <div class="flex justify-end border-t pt-4">
+                    <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm">
+                        보고서 제출하기
+                    </button>
+                </div>
+            </form>
+
+            <h2 class="section-title mt-12">Q&A 게시판</h2>
+            
+            <div class="mt-4 space-y-4">
+                <!-- Post 1 -->
+                <div class="border border-gray-200 rounded-lg p-4 bg-white">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3조</div>
+                        <span class="font-medium text-sm text-gray-800">Tracker 프로그램에서 질량 중심 설정이 안 돼요.</span>
+                    </div>
+                    <p class="text-sm text-gray-600 ml-8 mb-2">영상 화질이 낮아서 그런지 자동 트래킹이 자꾸 끊깁니다. 수동으로 찍는 게 나을까요?</p>
+                    <div class="ml-8 mt-3 bg-gray-50 p-3 rounded border border-gray-100">
+                        <div class="text-xs font-bold text-gray-700 mb-1">선생님</div>
+                        <p class="text-sm text-gray-600">네, 화질이 낮아 대비가 명확하지 않으면 자동 트래킹이 어려울 수 있습니다. shift 키를 누른 상태로 직접 포인트를 찍어 수동으로 진행해 보세요.</p>
+                    </div>
+                </div>
+                
+                <!-- Post 2 -->
+                <div class="border border-gray-200 rounded-lg p-4 bg-white">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-bold">5조</div>
+                        <span class="font-medium text-sm text-gray-800">에너지 계산 시트 수식 질문입니다.</span>
+                    </div>
+                    <p class="text-sm text-gray-600 ml-8">구글 시트에서 속도를 구할 때 바로 전 시간 셀과 현재 시간 셀을 빼는게 맞나요?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DASHBOARD PAGE ==================== -->
+        <section id="page-dashboard" class="page-section content-container">
+            <h1 class="page-title">
+                <span class="text-5xl">🔒</span> 교사 대시보드
+            </h1>
+            
+            <p class="text-gray-700 mb-8">
+                학생들이 제출한 탐구 데이터와 과제물을 모아보는 공간입니다.
+            </p>
+
+            <!-- Password Gate -->
+            <div id="dashboard-login" class="mt-8 border border-gray-200 rounded-lg p-8 bg-white shadow-sm max-w-md mx-auto text-center">
+                <i class="ph-fill ph-lock-key text-4xl text-gray-400 mb-4"></i>
+                <h2 class="text-lg font-bold mb-2">관리자 권한 필요</h2>
+                <p class="text-sm text-gray-500 mb-4">대시보드에 접근하려면 비밀번호를 입력하세요. (힌트: 1234)</p>
+                <div class="flex gap-2">
+                    <input type="password" id="dashboard-pwd" class="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" placeholder="비밀번호 입력" onkeydown="if(event.key === 'Enter') checkDashboardAuth()">
+                    <button onclick="checkDashboardAuth()" class="bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700">접속</button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content (Hidden by default) -->
+            <div id="dashboard-content" class="hidden mt-6">
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">과제 제출 현황</h2>
+                    <div class="flex items-center gap-3">
+                        <button onclick="downloadSubmissionsExcel()" class="flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-green-100 transition-colors shadow-sm">
+                            <i class="ph-fill ph-file-xls text-lg"></i> 엑셀로 다운로드
+                        </button>
+                        <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">총 <span id="submission-count" class="font-bold text-blue-600">0</span>건 제출됨</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm text-gray-700">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold w-[20%]">학생 정보</th>
+                                    <th class="px-4 py-3 font-semibold w-[80%]">탐구 보고서 및 시스템 분석 결과</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-table-body" class="divide-y divide-gray-100">
+                                <!-- Dynamic rows will go here -->
+                                <tr>
+                                    <td colspan="2" class="px-4 py-8 text-center text-gray-500">아직 제출된 과제가 없습니다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Firebase SDK & Integration (Module) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 1 STREAMING_CHUNK: Firebase 환경 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdVmqLO3Wk-riiDY2xSDOzHmDchMLM3BU",
+            authDomain: "energy-conservation-1247c.firebaseapp.com",
+            projectId: "energy-conservation-1247c",
+            storageBucket: "energy-conservation-1247c.firebasestorage.app",
+            messagingSenderId: "217279070445",
+            appId: "1:217279070445:web:3c8bcaeb0e0cede6248ce4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const projectCollectionName = 'physics-submissions'; // 저장될 컬렉션 이름
+        
+        let currentUser = null;
+        let submittedAssignments = []; // 대시보드 표시용 배열
+        let currentAnalysisData = null; // 업로드된 엑셀 분석 결과
+        const DASHBOARD_PWD = "1234";
+
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let colorClass = 'bg-gray-800';
+            let icon = 'ph-info';
+            if (type === 'success') { colorClass = 'bg-green-600'; icon = 'ph-check-circle'; }
+            if (type === 'error') { colorClass = 'bg-red-600'; icon = 'ph-warning-circle'; }
+            
+            toast.className = `${colorClass} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 text-sm font-medium transform transition-all duration-300 translate-y-10 opacity-0`;
+            toast.innerHTML = `<i class="ph ${icon} text-lg"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // 애니메이션 실행
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            // 3초 후 제거
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // 네비게이션 함수
+        window.navigate = function(pageId) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            const sidebar = document.getElementById('sidebar');
+            if(sidebar.classList.contains('open')) sidebar.classList.remove('open');
+        };
+
+        // 모바일 메뉴 토글
+        document.getElementById('menu-toggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // 탭 전환 함수
+        window.switchTab = function(tabId, element) {
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            element.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        };
+
+        // 파일 다운로드 모의 함수
+        window.triggerDownload = function(event) {
+            event.preventDefault();
+            window.showToast('탐구활동_워크북.pdf 다운로드가 시작되었습니다.', 'success');
+        };
+
+        window.downloadExampleExcel = function() {
+            try {
+                const data = [
+                    ["시간(s)", "높이(m)", "속도(m/s)"],
+                    [0, 20.0, 0], [0.5, 18.775, 4.9], [1.0, 15.1, 9.8],
+                    [1.5, 8.975, 14.7], [2.0, 0.4, 19.6]
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "실험데이터");
+                XLSX.writeFile(wb, "자유낙하_예시데이터.xlsx");
+                window.showToast('예시 데이터 다운로드가 완료되었습니다.', 'success');
+            } catch (error) {
+                window.showToast('다운로드 중 오류가 발생했습니다.', 'error');
+            }
+        };
+
+        let energyChartInstance = null;
+        window.handleExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                    
+                    processAnalysisData(jsonData, file.name);
+                } catch(error) {
+                    window.showToast('엑셀 파일을 읽는 데 실패했습니다. 양식을 확인해주세요.', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        function processAnalysisData(rows, filename) {
+            const mass = 1.0; 
+            const g = 9.8;
+            const processedData = []; const labels = [];
+            const peData = []; const keData = []; const meData = [];
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 3 || row[0] === undefined) continue;
+                
+                const time = parseFloat(row[0]);
+                const height = parseFloat(row[1]);
+                const velocity = parseFloat(row[2]);
+                
+                if(isNaN(time) || isNaN(height) || isNaN(velocity)) continue;
+
+                const pe = mass * g * height;
+                const ke = 0.5 * mass * velocity * velocity;
+                const me = pe + ke;
+                
+                processedData.push({ time, height, velocity, pe, ke, me });
+                labels.push(time + 's'); peData.push(pe); keData.push(ke); meData.push(me);
+            }
+
+            if (processedData.length === 0) {
+                window.showToast('유효한 데이터가 없습니다.', 'error'); return;
+            }
+
+            // NEW: 실험 데이터 자동 요약 (세특용) 생성 로직
+            const initialME = processedData[0].me;
+            const finalME = processedData[processedData.length - 1].me;
+            let lossRatio = 0;
+            if (initialME > 0) lossRatio = ((initialME - finalME) / initialME) * 100;
+            
+            let conclusion = "";
+            const absLoss = Math.abs(lossRatio);
+            if (absLoss <= 5) {
+                conclusion = "이론적인 역학적 에너지 보존 법칙에 매우 잘 부합하는 정밀한 실험을 수행함.";
+            } else if (absLoss <= 20) {
+                conclusion = "공기 저항이나 마찰 등 외부 요인에 의해 일부 에너지가 손실되었으나, 전체적인 위치-운동 에너지 전환 경향성을 뚜렷하게 도출함.";
+            } else {
+                conclusion = "에너지 손실률이 높게 나타났으나, 오차 원인(트래킹 한계, 저항 등)에 대한 탐구 기반을 마련한 유의미한 데이터를 수집함.";
+            }
+
+            const autoReportText = `[역학적 에너지 분석 결과]\n• 초기 에너지: ${initialME.toFixed(2)} J ➞ 최종 에너지: ${finalME.toFixed(2)} J\n• 에너지 오차(손실)율: ${lossRatio.toFixed(1)}%\n• 평가: ${conclusion}`;
+            
+            document.getElementById('auto-analysis-text').innerText = autoReportText;
+
+            document.getElementById('analysis-results').classList.remove('hidden');
+            const tbody = document.getElementById('analysis-table-body');
+            tbody.innerHTML = '';
+            processedData.forEach(d => {
+                tbody.innerHTML += `<tr class="hover:bg-gray-50">
+                    <td class="border p-2">${d.time.toFixed(2)}</td><td class="border p-2">${d.height.toFixed(2)}</td>
+                    <td class="border p-2">${d.velocity.toFixed(2)}</td><td class="border p-2 text-blue-600">${d.pe.toFixed(2)}</td>
+                    <td class="border p-2 text-red-600">${d.ke.toFixed(2)}</td><td class="border p-2 text-purple-600 font-bold">${d.me.toFixed(2)}</td>
+                </tr>`;
+            });
+
+            const ctx = document.getElementById('energyChart').getContext('2d');
+            if (energyChartInstance) energyChartInstance.destroy();
+            energyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '위치 에너지', data: peData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true },
+                        { label: '운동 에너지', data: keData, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true },
+                        { label: '역학적 에너지', data: meData, borderColor: '#8b5cf6', borderWidth: 3, borderDash: [5, 5], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            currentAnalysisData = { filename, dataCount: processedData.length, autoReport: autoReportText };
+            window.updateAssignmentLinkUI(filename);
+            window.showToast('데이터 분석 완료! 과제 제출 메뉴에 자동 연동되었습니다.', 'success');
+        }
+
+        window.updateDbStatus = function(status, message) {
+            const statusEl = document.getElementById('db-status');
+            if (!statusEl) return;
+            let dotColor = status === 'connected' ? 'bg-green-500' : (status === 'error' ? 'bg-red-500' : 'bg-orange-500');
+            statusEl.innerHTML = `<span class="relative flex h-2.5 w-2.5"><span class="relative inline-flex rounded-full h-2.5 w-2.5 ${dotColor}"></span></span> ${message}`;
+        };
+
+        const initAuth = async () => {
+            try {
+                window.updateDbStatus('pending', 'DB 연결 중...');
+                const userCredential = await signInAnonymously(auth);
+                currentUser = userCredential.user;
+                window.updateDbStatus('connected', 'DB 정상 연결됨');
+                
+                // Firestore 데이터 실시간 감지 시작
+                const submissionsRef = collection(db, projectCollectionName);
+                onSnapshot(submissionsRef, (snapshot) => {
+                    const dataList = [];
+                    snapshot.forEach(doc => dataList.push({ id: doc.id, ...doc.data() }));
+                    dataList.sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+                    submittedAssignments = dataList;
+                    
+                    if(!document.getElementById('dashboard-content').classList.contains('hidden')) {
+                        window.renderDashboardTable();
+                    }
+                }, (error) => {
+                    console.error("Firestore Error:", error);
+                    window.updateDbStatus('error', 'DB 권한 오류 (규칙 확인)');
+                });
+
+                // 데이터베이스 저장 함수 정의
+                window.saveSubmissionToDB = async (data) => {
+                    await addDoc(submissionsRef, { ...data, createdAt: serverTimestamp(), userId: currentUser.uid });
+                };
+            } catch (error) {
+                console.warn("Auth Error:", error);
+                window.updateDbStatus('error', '인증 실패');
+                window.showToast('DB 연결 실패. 임시 로컬 모드로 동작합니다.', 'error');
+            }
+        };
+
+        window.updateAssignmentLinkUI = function(filename) {
+            const statusDiv = document.getElementById('attached-data-status');
+            statusDiv.className = "p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between text-sm text-blue-700";
+            statusDiv.innerHTML = `<div class="flex items-center gap-2"><i class="ph-fill ph-check-circle text-lg text-blue-600"></i><span><span class="font-bold">분석 데이터 첨부됨:</span> ${filename}</span></div><span class="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded font-semibold">연동됨</span>`;
+        }
+
+        window.submitForm = async function(event) {
+            event.preventDefault();
+            const groupName = document.getElementById('group-name').value;
+            const studentId = document.getElementById('student-id').value;
+            const studentName = document.getElementById('student-name').value;
+            
+            const expSummary = document.getElementById('exp-summary').value;
+            const hypoVerification = document.getElementById('hypo-verification').value;
+            const errorAnalysis = document.getElementById('error-analysis').value;
+            const reflection = document.getElementById('reflection').value;
+            
+            const submission = {
+                date: new Date().toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                group: groupName,
+                studentId: studentId,
+                studentName: studentName,
+                hasData: !!currentAnalysisData,
+                filename: currentAnalysisData ? currentAnalysisData.filename : '미첨부',
+                autoReport: currentAnalysisData ? currentAnalysisData.autoReport : '-',
+                expSummary: expSummary,
+                hypoVerification: hypoVerification,
+                errorAnalysis: errorAnalysis,
+                reflection: reflection
+            };
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            submitBtn.innerText = "제출 중..."; submitBtn.disabled = true;
+
+            try {
+                if (window.saveSubmissionToDB) {
+                    await window.saveSubmissionToDB(submission);
+                    window.showToast('보고서가 성공적으로 제출되었습니다!', 'success');
+                } else {
+                    submittedAssignments.push(submission);
+                    window.showToast('데이터베이스에 연결되지 않아 임시 저장되었습니다.', 'success');
+                }
+                
+                event.target.reset();
+                currentAnalysisData = null;
+                document.getElementById('attached-data-status').innerHTML = `<i class="ph ph-link-break text-lg"></i><span>아직 탐구 안내(3단계)에서 분석된 데이터가 없습니다.</span>`;
+                document.getElementById('attached-data-status').className = "p-3 bg-gray-50 border border-gray-200 rounded-md flex items-center gap-2 text-sm text-gray-500";
+            } catch (error) {
+                console.warn("Submit Error:", error);
+                window.showToast('제출 중 오류가 발생했습니다. 개발자 도구를 확인하세요.', 'error');
+            } finally {
+                submitBtn.innerText = "보고서 제출하기"; submitBtn.disabled = false;
+            }
+        };
+
+        window.checkDashboardAuth = function() {
+            if (document.getElementById('dashboard-pwd').value === DASHBOARD_PWD) {
+                document.getElementById('dashboard-login').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                document.getElementById('dashboard-pwd').value = '';
+                window.renderDashboardTable();
+            } else {
+                window.showToast('비밀번호가 일치하지 않습니다.', 'error');
+            }
+        };
+
+        window.renderDashboardTable = function() {
+            const tbody = document.getElementById('dashboard-table-body');
+            document.getElementById('submission-count').innerText = submittedAssignments.length;
+            
+            if (submittedAssignments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-8 text-center text-gray-500">아직 제출된 과제가 없습니다.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            [...submittedAssignments].reverse().forEach(sub => {
+                const dataBadge = sub.hasData ? `<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200 mb-2"><i class="ph-fill ph-chart-line-up"></i>${sub.filename}</span>` : `<span class="inline-block text-gray-400 text-xs bg-gray-100 px-2 py-1 rounded border border-gray-200 mb-2">미첨부</span>`;
+                
+                const reportUI = sub.hasData ? `
+                    <div class="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900 whitespace-pre-line leading-relaxed mb-4">
+                        <div class="font-bold mb-1 flex items-center gap-1 text-blue-800"><i class="ph-fill ph-robot text-blue-600"></i>시스템 자동 분석 (에너지 오차율 기반)</div>
+                        ${sub.autoReport}
+                    </div>
+                ` : '';
+
+                tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100">
+                    <td class="px-4 py-4 align-top border-r border-gray-100">
+                        <div class="font-bold text-gray-800 text-base mb-1">${sub.studentName || '-'}</div>
+                        <div class="text-sm text-gray-600 mb-2">${sub.studentId || '-'} <span class="text-gray-400 font-medium text-xs ml-1">${sub.group}</span></div>
+                        <div class="text-xs text-gray-400">${sub.date}</div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        ${dataBadge}
+                        ${reportUI}
+                        <div class="space-y-4 bg-white p-5 border border-gray-100 rounded-md shadow-sm">
+                            <div>
+                                <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded">1. 실험 요약</span>
+                                <p class="text-sm text-gray-700 mt-2 leading-relaxed">${sub.expSummary || '-'}</p>
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-bold text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">2. 가설 검증</span>
+                                <p class="text-sm text-gray-700 mt-2 leading-relaxed">${sub.hypoVerification || '-'}</p>
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-2 py-1 rounded">3. 오차 및 원인 분석</span>
+                                <p class="text-sm text-gray-700 mt-2 leading-relaxed">${sub.errorAnalysis || '-'}</p>
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-bold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-1 rounded">4. 소감</span>
+                                <p class="text-sm text-gray-700 mt-2 leading-relaxed">${sub.reflection || '-'}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- AI 피드백 영역 추가 -->
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            ${sub.aiFeedback ?
+                                `<div class="bg-indigo-50 border border-indigo-100 p-4 rounded-md shadow-sm">
+                                    <div class="font-bold text-indigo-800 text-sm mb-2 flex items-center gap-1"><i class="ph-fill ph-magic-wand text-indigo-600"></i> AI 교사 피드백</div>
+                                    <p class="text-sm text-indigo-900 whitespace-pre-line leading-relaxed">${sub.aiFeedback}</p>
+                                </div>` :
+                                `<button onclick="window.generateAIFeedback('${sub.id || Math.random()}')" class="text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-1 shadow-sm">
+                                    <i class="ph-bold ph-sparkle text-indigo-500"></i> 학생 맞춤형 AI 피드백 생성하기
+                                </button>`
+                            }
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        };
+
+        // 8 STREAMING_CHUNK: AI 피드백 생성 기능
+        window.generateAIFeedback = async function(docId) {
+            // docId나 임시 생성된 random id로 객체 찾기
+            const sub = submittedAssignments.find(s => s.id === docId || !s.id); 
+            if (!sub) return;
+
+            window.showToast('AI가 피드백을 생성하는 중입니다. 5~10초 정도 소요됩니다.', 'info');
+            
+            // 프롬프트 작성 (선생님의 페르소나 부여)
+            const prompt = `당신은 친절하고 전문적인 고등학교 물리학 교사입니다. 학생이 제출한 '역학적 에너지 보존 법칙' 탐구 보고서를 바탕으로 긍정적이고 구체적인 피드백을 작성해주세요. 학생의 노력에 대한 칭찬과, 과학적 사고력을 높일 수 있는 조언을 3~4문장으로 부드럽게 작성해주세요.
+            
+[학생 정보] ${sub.group} ${sub.studentName}
+[실험 요약] ${sub.expSummary}
+[가설 검증] ${sub.hypoVerification}
+[오차 및 원인 분석] ${sub.errorAnalysis}
+[소감] ${sub.reflection}
+[시스템 오차율 분석] ${sub.autoReport}`;
+
+            try {
+                // Canvas 환경에 내장된 Gemini 3.1 Flash Preview API 사용
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const feedbackText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (feedbackText) {
+                    if (currentUser && sub.id) {
+                        // DB에 저장 (onSnapshot 이벤트에 의해 UI는 자동 새로고침 됨)
+                        const docRef = doc(db, projectCollectionName, sub.id);
+                        await updateDoc(docRef, { aiFeedback: feedbackText });
+                        window.showToast('AI 피드백이 생성 및 저장되었습니다!', 'success');
+                    } else {
+                        // 로컬 모드 처리
+                        sub.aiFeedback = feedbackText;
+                        window.renderDashboardTable();
+                        window.showToast('AI 피드백이 임시 생성되었습니다.', 'success');
+                    }
+                } else {
+                    window.showToast('AI 응답을 생성하지 못했습니다. 다시 시도해주세요.', 'error');
+                }
+            } catch (error) {
+                console.error("AI API Error:", error);
+                window.showToast('네트워크 또는 API 오류가 발생했습니다.', 'error');
+            }
+        };
+
+        // 9 STREAMING_CHUNK: 엑셀 다운로드 기능
+        window.downloadSubmissionsExcel = function() {
+            if (submittedAssignments.length === 0) {
+                window.showToast('다운로드할 제출 내역이 없습니다.', 'error');
+                return;
+            }
+
+            // 1. 데이터를 엑셀 양식(JSON 객체 배열)으로 변환
+            const excelData = submittedAssignments.map(sub => ({
+                "제출일시": sub.date || '-',
+                "조": sub.group || '-',
+                "학번": sub.studentId || '-',
+                "이름": sub.studentName || '-',
+                "시스템 분석(에너지 오차율)": sub.autoReport ? sub.autoReport.replace(/\n/g, ' ') : '-',
+                "분석 파일명": sub.filename || '미첨부',
+                "1. 실험 요약": sub.expSummary || '-',
+                "2. 가설 검증": sub.hypoVerification || '-',
+                "3. 오차 및 원인 분석": sub.errorAnalysis || '-',
+                "4. 소감": sub.reflection || '-',
+                "AI 피드백": sub.aiFeedback || '-'
+            }));
+
+            // 2. 워크시트 생성
+            const ws = XLSX.utils.json_to_sheet(excelData);
+
+            // 3. 열 너비 자동 조정 (가독성 향상)
+            const wscols = [
+                {wch: 15}, {wch: 8}, {wch: 10}, {wch: 10}, {wch: 55}, 
+                {wch: 25}, {wch: 50}, {wch: 50}, {wch: 50}, {wch: 50}, {wch: 70}
+            ];
+            ws['!cols'] = wscols;
+
+            // 4. 워크북 생성 및 시트 추가
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "학생_제출내역");
+
+            // 5. 파일명 생성 (오늘 날짜 포함) 및 다운로드 실행
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}${(today.getMonth()+1).toString().padStart(2,'0')}${today.getDate().toString().padStart(2,'0')}`;
+            XLSX.writeFile(wb, `에너지보존법칙_과제제출현황_${dateStr}.xlsx`);
+            
+            window.showToast('학생 과제 내역이 엑셀로 다운로드되었습니다.', 'success');
+        };
+
+        // 앱 시작 시 인증 실행
+        initAuth();
+    </script>
+</body>
+</html>
